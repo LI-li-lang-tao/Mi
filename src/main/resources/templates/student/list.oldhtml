@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>学生管理</title>
+    <script src="/js/jquery-4.0.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: #f5f5f7;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #86868b;
+            margin-top: 8px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #86868b;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px 0 48px;
+            font-size: 16px;
+            font-weight: 400;
+            background: white;
+            border: 1px solid #e8e8ed;
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+        }
+
+        .search-input::placeholder {
+            color: #86868b;
+        }
+
+        .table-wrapper {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #fafafa;
+        }
+
+        th {
+            padding: 16px 24px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 16px 24px;
+            font-size: 14px;
+            color: #1d1d1f;
+        }
+
+        td:first-child {
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+            color: #86868b;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #86868b;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e8e8ed;
+            border-radius: 50%;
+            border-top-color: #0071e3;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-info {
+            font-size: 12px;
+            color: #86868b;
+            margin-bottom: 16px;
+            text-align: right;
+        }
+
+        .clear-btn {
+            display: none;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #86868b;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: background-color 0.15s ease;
+        }
+
+        .clear-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .clear-btn.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>学生管理</h1>
+            <p>Student Management</p>
+        </div>
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput" 
+                placeholder="输入姓名搜索学生..."
+            >
+            <button class="clear-btn" id="clearBtn" onclick="clearSearch()">✕</button>
+        </div>
+
+        <div class="results-info" id="resultsInfo"></div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>学号</th>
+                        <th>年龄</th>
+                    </tr>
+                </thead>
+                <tbody id="tbStudent">
+                    <tr>
+                        <td colspan="3" class="loading">
+                            <span class="loading-spinner"></span>
+                            <span>加载中...</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allStudents = [];
+
+        $(() => {
+            loadStudents();
+
+            $('#searchInput').on('input', function() {
+                const keyword = $(this).val().trim();
+                const clearBtn = $('#clearBtn');
+                
+                if (keyword) {
+                    clearBtn.addClass('show');
+                    filterStudents(keyword);
+                } else {
+                    clearBtn.removeClass('show');
+                    displayStudents(allStudents);
+                }
+            });
+        });
+
+        function loadStudents() {
+            $.ajax({
+                url: "/api/student/list"
+            }).done((data) => {
+                allStudents = data || [];
+                displayStudents(allStudents);
+            }).fail(() => {
+                $('#tbStudent').html(`
+                    <tr>
+                        <td colspan="3" class="empty-state">
+                            <div class="icon">⚠️</div>
+                            <h3>加载失败</h3>
+                            <p>无法获取学生数据，请稍后重试</p>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        function filterStudents(keyword) {
+            const filtered = allStudents.filter(student => 
+                student.name.toLowerCase().includes(keyword.toLowerCase())
+            );
+            displayStudents(filtered);
+        }
+
+        function displayStudents(students) {
+            updateResultsInfo(students.length);
+
+            if (!students || students.length === 0) {
+                $('#tbStudent').html(`
+                    <tr>
+                        <td colspan="3" class="empty-state">
+                            <div class="icon">📭</div>
+                            <h3>未找到学生</h3>
+                            <p>没有匹配的学生信息</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            let html = "";
+            students.forEach((student) => {
+                html += `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.sno}</td>
+                        <td>${student.age}</td>
+                    </tr>
+                `;
+            });
+            $('#tbStudent').html(html);
+        }
+
+        function updateResultsInfo(count) {
+            const keyword = $('#searchInput').val().trim();
+            let text = `共 ${count} 名学生`;
+            if (keyword) {
+                text = `搜索 "${keyword}" 找到 ${count} 名学生`;
+            }
+            $('#resultsInfo').text(text);
+        }
+
+        function clearSearch() {
+            $('#searchInput').val('').focus();
+            $('#clearBtn').removeClass('show');
+            displayStudents(allStudents);
+        }
+    </script>
+</body>
+</html>

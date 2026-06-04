@@ -16,4 +16,5 @@ public class StudentController {
     public String list() {
         return "/student/list";
     }
+
 }
